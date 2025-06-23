@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wireframe with Video Background + Overlay</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+
+      /* 🔹 Background video */
+      #bg-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+      }
+
+      /* 🔹 Dark overlay between video and canvas */
+      #dark-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5); /* adjust opacity as needed */
+        z-index: 1;
+      }
+
+      /* 🔹 Canvas (wireframe) on top with gradient transparency */
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 2;
+
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0%,
+          rgba(0, 0, 0, 0) 65%,
+          rgba(0, 0, 0, 0.5) 80%,
+          rgba(0, 0, 0, 0.7) 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0%,
+          rgba(0, 0, 0, 0) 65%,
+          rgba(0, 0, 0, 0.5) 80%,
+          rgba(0, 0, 0, 0.7) 100%
+        );
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 🔹 Background Video -->
+    <video id="bg-video" autoplay muted loop playsinline>
+      <source
+        src="https://cdn.pixabay.com/video/2021/04/15/71122-537102350_large.mp4"
+        type="video/mp4"
+      />
+      Your browser does not support the video tag.
+    </video>
+
+    <!-- 🔹 Dark Overlay -->
+    <div id="dark-overlay"></div>
+
+    <!-- 🔹 Three.js Canvas -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script>
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      document.body.appendChild(renderer.domElement);
+
+      const geometry = new THREE.PlaneGeometry(100, 100, 100, 100);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x008b8b, // Dark teal
+        wireframe: true,
+      });
+      const plane = new THREE.Mesh(geometry, material);
+      plane.rotation.x = -Math.PI / 2;
+      scene.add(plane);
+
+      camera.position.set(0, 15, 10);
+      camera.lookAt(0, 0, 0);
+
+      function animateWave(time) {
+        const pos = plane.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          const wave =
+            Math.sin((x + time * 0.001) * 0.5) +
+            Math.cos((y + time * 0.001) * 0.5);
+          pos.setZ(i, wave * 1.5);
+        }
+        pos.needsUpdate = true;
+      }
+
+      function animate(time) {
+        requestAnimationFrame(animate);
+        animateWave(time);
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    </script>
+  </body>
+</html>
